@@ -3,7 +3,7 @@ import Header from '@/components/Header'
 import Balance from '@/components/Balance'
 import IncomeExpenses from '@/components/IncomeExpenses'
 import History from '@/components/History'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export default function Home() {
 
@@ -11,13 +11,39 @@ export default function Home() {
   const [exp, setExp] = useState('');
   const [amount, setAmount] = useState('');
 
+  useEffect(() => {
+    const apiUrl = `http://localhost:8000/expenses`;
+    fetch(apiUrl, {
+      method: 'GET'
+    })
+      .then(response => response.json())
+      .then(data => setExpenses(data))
+      .catch(error => `Fatel Error`);
+
+  }, [])
+
   const addExpense = () => {
-    const transactionList = { id: expenses.length, name: exp, amount: amount };
 
     if (exp.length > 0) {
-      setExpenses(prev => {
-        return [...prev, transactionList];
-      })
+
+      const transactionList = { id: new Date(), name: exp, amount: amount };
+      const apiUrl = `http://localhost:8000/expenses`;
+      fetch(apiUrl,
+        {
+          method: "POST",
+          headers: {
+            "Content-type" : 'application/json'
+          },
+          body: JSON.stringify(transactionList)
+        })
+        .then(response => response.json())
+        .then(data => {
+          setExpenses(prev => {
+            return [...prev, transactionList];
+          })
+        })
+        .catch(error => `Fatel Error`);
+
       setAmount('');
       setExp('');
     } else {
@@ -27,7 +53,7 @@ export default function Home() {
 
   const calculateBalance = () => {
     let sum = 0;
-    for(let i = 0; i < expenses.length; i++){
+    for (let i = 0; i < expenses.length; i++) {
       sum += +expenses[i].amount;
     }
     return sum;
@@ -35,24 +61,35 @@ export default function Home() {
 
   const calculateIncome = () => {
     let income = 0;
-    for(let i = 0; i < expenses.length; i++){
-      if(expenses[i].amount > 0){
-        income += +expenses[i].amount;}
+    for (let i = 0; i < expenses.length; i++) {
+      if (expenses[i].amount > 0) {
+        income += +expenses[i].amount;
       }
-      return income;
     }
+    return income;
+  }
 
   const calculateExpense = () => {
     let expense = 0;
-    for(let i = 0; i < expenses.length; i++){
-      if(expenses[i].amount < 0){
-      expense += +expenses[i].amount;}
+    for (let i = 0; i < expenses.length; i++) {
+      if (expenses[i].amount < 0) {
+        expense += +expenses[i].amount;
+      }
     }
     return expense;
   }
 
 
   const deleteExp = (id: any) => {
+
+    const apiUrl = `http://localhost:8000/expenses/${id}`;
+    fetch(apiUrl, {
+      method: 'DELETE'
+    })
+      .then(response => response.json())
+
+      .catch(error => `Fatel Error`);
+
     setExpenses(prev => {
       return prev.filter((transactionList: any) => transactionList.id !== id);
     })
@@ -81,7 +118,7 @@ export default function Home() {
         <ul id="list" className="list">
           {expenses.map((expense: any, key: any) => (
             <li key={key}
-              className={expense.amount > 0? "plus" : "minus"}>
+              className={expense.amount > 0 ? "plus" : "minus"}>
               {expense.name}
               <span>$ {expense.amount}</span>
               <span className='delete-btn'
